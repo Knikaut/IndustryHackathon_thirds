@@ -44,7 +44,7 @@ h3 { font-family: var(--cond); font-size: 0.95rem; font-weight: 600; letter-spac
 
 /* --- шапка: анодированная шильда --------------------------------------- */
 .top {
-  display: flex; align-items: center; gap: 28px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 28px; flex-wrap: wrap; flex: none;
   padding: 10px 20px; background: var(--ink); color: var(--plate);
 }
 .brand { display: flex; flex-direction: column; line-height: 1.15; }
@@ -60,9 +60,11 @@ h3 { font-family: var(--cond); font-size: 0.95rem; font-weight: 600; letter-spac
 .top nav button:hover { color: var(--plate); background: oklch(0.32 0.025 250); }
 .top nav button.on { background: var(--plate); color: var(--ink); }
 .top nav .count {
-  margin-left: 8px; padding: 0 6px; border-radius: 9px; background: var(--bad); color: #fff;
-  font-family: var(--cond); font-size: 0.95rem; font-weight: 700;
+  display: inline-block; min-width: 22px; margin-left: 8px; padding: 0 6px; border-radius: 9px; background: var(--bad); color: #fff;
+  font-family: var(--cond); font-size: 0.95rem; font-weight: 700; text-align: center;
 }
+/* счётчик при нуле не снимается: ширина вкладки не меняется */
+.top nav .count.none { visibility: hidden; }
 .top :focus-visible { outline-color: var(--plate); }
 .status { margin-left: auto; display: flex; align-items: center; gap: 22px; }
 .shift { display: grid; grid-template-columns: auto auto; gap: 2px 10px; align-items: center; font-size: 0.93rem; color: oklch(0.86 0.015 250); }
@@ -75,30 +77,41 @@ h3 { font-family: var(--cond); font-size: 0.95rem; font-weight: 600; letter-spac
   font-size: 0.93rem; opacity: 0.85; transition: opacity 0.2s;
 }
 .ghost:hover { opacity: 1; }
-.synthetic { padding: 6px 20px; background: var(--tile); color: var(--ink-2); font-size: 0.9rem; }
+.top .pause { min-width: 108px; text-align: center; }
+/* полоса источника: всегда одна строка, полный текст в подсказке */
+.synthetic {
+  flex: none; display: flex; gap: 14px; height: 26px; padding: 0 20px; line-height: 26px;
+  background: var(--tile); color: var(--ink-2); font-size: 0.9rem; white-space: nowrap;
+}
+.synthetic span { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .synthetic b { color: var(--ink); font-weight: 600; }
-.synthetic .err { color: var(--bad-ink); }
+.synthetic .err { flex: none; color: var(--bad-ink); }
 
 .boot { min-height: 100vh; display: grid; place-content: center; text-align: center; gap: 10px; padding: 24px; }
 .boot h1 { font-family: var(--cond); font-size: 3rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .boot p { color: var(--ink-2); max-width: 46ch; }
 
 /* --- рейка приборов ---------------------------------------------------- */
-.board { padding: 14px 20px 24px; display: grid; gap: 14px; }
+.board { padding: 14px 20px 24px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
 .instruments {
-  display: grid; grid-template-columns: 1.7fr repeat(4, 1fr);
+  display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.05fr) minmax(0, 0.8fr) minmax(0, 0.9fr) minmax(0, 1.05fr);
   background: var(--plate); border: 1px solid var(--rule); border-radius: 3px;
   box-shadow: 0 1px 0 #fff inset, 0 2px 5px -2px oklch(0.4 0.03 155 / 0.35);
 }
-.inst { padding: 12px 16px 13px; border-left: 1px solid var(--rule); min-width: 0; }
+/* три строки постоянной высоты: рейка не меняет высоту ни от данных, ни от ширины окна */
+.inst { padding: 7px 16px; border-left: 1px solid var(--rule); min-width: 0; }
 .inst:first-child { border-left: 0; }
-.inst h2 { color: var(--ink-2); font-size: 0.95rem; }
-.big { font-size: 2.7rem; font-weight: 750; line-height: 1.05; margin-top: 2px; white-space: nowrap; }
-.big small { font-family: var(--ui); font-size: 0.9rem; font-weight: 450; color: var(--ink-2); letter-spacing: 0; white-space: normal; }
+.inst h2 { color: var(--ink-2); font-size: 0.95rem; height: 16px; line-height: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.big { font-size: 2.7rem; font-weight: 750; height: 36px; line-height: 36px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.big small { font-family: var(--ui); font-size: 0.9rem; font-weight: 450; color: var(--ink-2); letter-spacing: 0; white-space: nowrap; }
 .big.bad { color: var(--bad-ink); }
 .big.warn { color: var(--warn-ink); }
-.sub { margin-top: 5px; font-size: 0.9rem; color: var(--ink-2); }
-.sub .num, .sub b { color: var(--ink); font-size: 1.05rem; font-weight: 650; }
+.big-row { display: flex; align-items: center; gap: 18px; }
+.big-row .big { flex: 0 1 auto; min-width: 0; }
+.big-row .gauge { flex: 1 1 80px; min-width: 60px; margin-top: 0; }
+.sub { margin-top: 2px; height: 20px; line-height: 20px; font-size: 0.9rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sub .num, .sub b { color: var(--ink); font-size: 1.05rem; font-weight: 650; line-height: 1; }
+.w-short { display: none; }
 .split { display: flex; flex-wrap: wrap; gap: 2px 12px; }
 .gauge { position: relative; height: 9px; margin-top: 8px; background: var(--tile); }
 .gauge > i { display: block; height: 100%; background: var(--ink); width: 100%; transform-origin: left; transition: transform 0.8s var(--ease); }
@@ -106,24 +119,27 @@ h3 { font-family: var(--cond); font-size: 0.95rem; font-weight: 600; letter-spac
 .gauge > b { position: absolute; top: -4px; bottom: -4px; width: 3px; margin-left: -1px; background: var(--plan); transition: left 0.8s var(--ease); }
 
 /* --- щит --------------------------------------------------------------- */
-.board-main { display: grid; grid-template-columns: minmax(0, 1fr) 372px; gap: 14px; align-items: start; }
+.board-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
 .panel {
   background: var(--panel); border: 1px solid var(--rule); border-radius: 3px;
   box-shadow: 0 1px 0 oklch(0.97 0.01 155) inset, 0 2px 5px -2px oklch(0.4 0.03 155 / 0.35);
   min-width: 0;
 }
 .panel.pad { background: var(--plate); padding: 18px 20px 20px; }
-.mimic-scroll { overflow-x: auto; }
-.mimic { display: block; width: 100%; min-width: 980px; height: auto; user-select: none; }
+.stage { display: flex; flex-direction: column; overflow: hidden; }
+.mimic-scroll { overflow: hidden; }
+.mimic { display: block; width: 100%; height: auto; user-select: none; }
 .mimic text { font-family: var(--cond); fill: var(--ink); }
 .zone path { fill: none; stroke: var(--ink-3); stroke-width: 1.5; }
 .zone text { font-size: 21px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; fill: var(--ink-2); }
-.terminal { font-size: 15px; font-weight: 600; letter-spacing: 0.16em; fill: var(--ink-3) !important; }
+.terminal { font-size: 17px; font-weight: 600; letter-spacing: 0.16em; fill: var(--ink-3) !important; }
 .pipe { fill: none; stroke: var(--ink); stroke-width: 8; }
 .flow {
   fill: none; stroke: var(--plate); stroke-width: 3; stroke-linecap: round;
-  stroke-dasharray: 3 21; animation: flow 0.9s linear infinite;
+  stroke-dasharray: 3 21; animation: flow 0.9s linear infinite; transition: opacity 0.4s;
 }
+/* отрезок за стоящим постом гаснет, но анимация идёт: после включения точки в общей фазе */
+.flow.off { opacity: 0; }
 @keyframes flow { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
 
 .st { cursor: pointer; outline: none; }
@@ -143,10 +159,13 @@ h3 { font-family: var(--cond); font-size: 0.95rem; font-weight: 600; letter-spac
 .st-val .unit { font-size: 17px; fill: var(--ink-2); font-weight: 500; }
 .st-val .ai { font-size: 17px; fill: var(--ai); font-weight: 700; }
 .st-alarm { font-size: 17px; font-weight: 700; fill: var(--bad-ink) !important; }
+.st-risk { font-size: 17px; font-weight: 700; letter-spacing: 0.02em; fill: var(--ai) !important; transition: opacity 0.4s; }
+.st-risk.off { opacity: 0; }
 .risk-ring {
   fill: none; stroke: var(--ai); stroke-width: 2.5; stroke-dasharray: 5 6;
-  transform-box: fill-box; transform-origin: center; animation: orbit 14s linear infinite;
+  transform-box: fill-box; transform-origin: center; animation: orbit 14s linear infinite; transition: opacity 0.4s;
 }
+.risk-ring.off { opacity: 0; }
 .risk-ring.high { stroke-width: 4.5; stroke-dasharray: 11 5; animation-duration: 6s; }
 .risk-ring.still { animation: none; stroke-width: 2.5; stroke-dasharray: 4 3; }
 @keyframes orbit { to { transform: rotate(360deg); } }
@@ -161,15 +180,23 @@ h3 { font-family: var(--cond); font-size: 0.95rem; font-weight: 600; letter-spac
 .legend text { font-size: 17px; fill: var(--ink-2); letter-spacing: 0.03em; }
 .lg.run { fill: var(--ok); } .lg.idle { fill: var(--idle); } .lg.down { fill: var(--bad); } .lg.planned { fill: var(--planned); }
 
-.under { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 24px; padding: 14px 18px 16px; background: var(--plate); border-top: 1px solid var(--rule); }
-.under h2 { color: var(--ink-2); font-size: 0.95rem; margin-bottom: 6px; }
-.bn-note p { max-width: 46ch; }
+.under { flex: none; display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 24px; padding: 9px 18px 10px; background: var(--plate); border-top: 1px solid var(--rule); }
+.under > div { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.under-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0 14px; }
+.under h2 { color: var(--ink-2); font-size: 0.95rem; margin-bottom: 4px; white-space: nowrap; }
+.under .key { margin: 0 0 4px; }
+.under .chart.fit { height: 104px; }
+.bn-note p { max-width: 46ch; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
 
 /* --- графики ----------------------------------------------------------- */
 .chart { width: 100%; }
+/* высоту задаёт место в раскладке; содержимое SVG на неё не влияет */
+.chart.fit { height: 96px; min-height: 0; overflow: hidden; }
 .chart svg { display: block; }
 .chart .grid { stroke: var(--rule); stroke-width: 1; }
 .chart .tick { font-family: var(--cond); font-size: 12px; fill: var(--ink-2); }
+/* подпись опорной линии читается поверх кривой */
+.chart .tick.ref { paint-order: stroke; stroke: var(--plate); stroke-width: 3px; stroke-linejoin: round; }
 .key { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 6px; font-size: 0.88rem; color: var(--ink-2); }
 .key i { display: inline-block; width: 14px; height: 4px; margin-left: 10px; }
 .key i:first-child { margin-left: 0; }
@@ -179,13 +206,15 @@ h3 { font-family: var(--cond); font-size: 0.95rem; font-weight: 600; letter-spac
 .side {
   background: var(--plate); border: 1px solid var(--rule); border-radius: 3px;
   box-shadow: 0 1px 0 #fff inset, 0 2px 5px -2px oklch(0.4 0.03 155 / 0.35);
-  position: sticky; top: 12px; max-height: calc(100vh - 24px);
   display: flex; flex-direction: column; min-width: 0;
 }
-.side-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: flex-start; }
-.side-head .ghost { color: var(--ink); }
-.side-body { padding: 4px 16px 18px; overflow-y: auto; }
-.side-body h3 { margin: 18px 0 8px; }
+.side-head { flex: none; padding: 9px 16px; border-bottom: 1px solid var(--rule); display: flex; flex-wrap: wrap; gap: 7px 10px; justify-content: space-between; align-items: center; }
+.side-head .ghost { color: var(--ink); flex: none; padding: 4px 10px; }
+/* шапка паспорта — всегда одна строка: длинное название обрезается, полное в подсказке */
+.passport .side-head { flex-wrap: nowrap; }
+.passport .side-head h2 { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side-body { padding: 0 16px 14px; }
+.side-body h3 { margin: 14px 0 6px; }
 .calm { padding: 22px 0; color: var(--ink-2); }
 .chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .chips button {
@@ -194,6 +223,9 @@ h3 { font-family: var(--cond); font-size: 0.95rem; font-weight: 600; letter-spac
 }
 .chips button:hover { border-color: var(--ink-3); color: var(--ink); }
 .chips button.on { background: var(--ink); border-color: var(--ink); color: var(--plate); }
+/* фильтры ленты — одной строкой на всю ширину шапки */
+.feed .chips { flex: 1 1 100%; flex-wrap: nowrap; gap: 3px; max-width: 440px; }
+.feed .chips button { flex: 1 1 auto; padding: 3px 4px; white-space: nowrap; }
 
 .inc button {
   display: grid; gap: 2px; width: 100%; text-align: left; background: none; border: 0;
@@ -218,21 +250,71 @@ h3 { font-family: var(--cond); font-size: 0.95rem; font-weight: 600; letter-spac
 .inc-action { font-size: 0.93rem; margin-top: 3px; }
 .inc-outcome { font-size: 0.9rem; color: var(--ai); font-weight: 550; }
 
-.op { margin-top: 14px; color: var(--ink-2); font-size: 0.95rem; }
-.state-line { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-weight: 600; }
-.state-line .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--idle); }
+/* --- паспорт поста ------------------------------------------------------ */
+/* неподвижная часть: состояние, сценарии показа, вкладки */
+.pass-top { flex: none; padding: 9px 16px 0; }
+.state-line { display: flex; align-items: center; gap: 8px; height: 21px; font-weight: 600; white-space: nowrap; }
+.state-line .dot { flex: none; width: 11px; height: 11px; border-radius: 50%; background: var(--idle); }
+.state-line span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.state-line .asset { flex: 0 1 auto; max-width: 55%; font-weight: 450; font-size: 0.93rem; color: var(--ink-2); }
 .state-line.run .dot { background: var(--ok); }
 .state-line.down { color: var(--bad-ink); } .state-line.down .dot { background: var(--bad); }
 .state-line.planned .dot { background: var(--planned); }
 
-.risk-box { display: grid; grid-template-columns: auto 1fr; gap: 14px; margin: 12px 0 8px; padding: 12px 14px; background: var(--panel); border-radius: 2px; }
+.scenario { margin-top: 8px; }
+.scenario .btns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0; }
+.scenario .btns button {
+  padding: 5px 2px 6px; font-family: var(--cond); font-size: 1.05rem; font-weight: 650; letter-spacing: 0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.scenario-note { margin-top: 4px; height: 18px; line-height: 18px; font-size: 0.86rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 7px; border: 1px solid var(--ink); border-radius: 2px; }
+.tabs button {
+  background: none; border: 0; border-left: 1px solid var(--ink); padding: 4px 2px 5px;
+  font-family: var(--cond); font-size: 1rem; font-weight: 650; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-2);
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.tabs button:first-child { border-left: 0; }
+.tabs button:hover { color: var(--ink); }
+.tabs button.on { background: var(--ink); color: var(--plate); }
+
+.passport .side-body { display: flex; flex-direction: column; padding-bottom: 0; }
+.pane { flex: 1 0 auto; display: flex; flex-direction: column; gap: 8px; padding: 10px 0 12px; }
+.pane h3 { margin: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.pane h3 b { font-size: 1.2rem; font-weight: 700; color: var(--ink); letter-spacing: 0.01em; }
+.pane .chart.fit { flex: none; }
+/* прежние данные на время загрузки нового поста видны, но приглушены */
+.dep { transition: opacity 0.2s; }
+.stale { opacity: 0.45; }
+
+.risk-box { flex: none; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 5px 12px; padding: 8px 12px 9px; background: var(--panel); border-radius: 2px; }
 .risk-box.high, .risk-box.elevated { background: var(--ai-wash); }
-.risk-num { font-size: 3rem; font-weight: 800; line-height: 1; color: var(--ink-2); }
+.risk-num { font-size: 3rem; font-weight: 800; line-height: 1; color: var(--ink-2); min-width: 2.2ch; }
 .risk-box.high .risk-num, .risk-box.elevated .risk-num { color: var(--ai); }
 .risk-num small { font-size: 1.2rem; }
+.risk-box strong { display: block; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .factors { margin: 5px 0; font-size: 0.93rem; color: var(--ink-2); }
 .factors b { color: var(--ink); font-size: 1.05rem; font-weight: 650; }
 .advice { font-size: 0.93rem; }
+.risk-box .factors { margin: 2px 0 0; height: 54px; line-height: 18px; overflow: hidden; }
+.risk-box .factors li { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.risk-box .factors b { line-height: 1; }
+.risk-box .advice { grid-column: 1 / -1; height: 36px; line-height: 18px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+
+.passport .facts { flex: none; margin: 0; gap: 6px 12px; }
+.passport .facts div { min-width: 0; }
+.passport .facts dt { line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.passport .facts dd { line-height: 1.1; white-space: nowrap; }
+.op { color: var(--ink-2); font-size: 0.95rem; }
+
+/* строка последнего открытого инцидента: видна, пока лента скрыта паспортом */
+.side-last { flex: none; padding: 0 16px; border-top: 1px solid var(--rule); }
+.side-last.inc button { border-top: 0; padding: 7px 0 8px 22px; }
+.side-last.inc button::before { top: 11px; }
+.side-last strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.side-last:not(.open) button::before { background: var(--ok); }
+.side-last button:hover strong { text-decoration: underline; text-underline-offset: 3px; }
 
 .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 14px; margin: 16px 0 4px; }
 .facts.two { grid-template-columns: repeat(2, 1fr); }
@@ -244,10 +326,13 @@ h3 { font-family: var(--cond); font-size: 0.95rem; font-weight: 600; letter-spac
 .facts dd.warn { color: var(--warn-ink); }
 
 table { border-collapse: collapse; width: 100%; }
-.mini td { padding: 5px 0; border-top: 1px solid var(--rule); font-size: 0.93rem; }
+.mini-wrap { flex: none; }
+.mini { table-layout: fixed; }
+.mini td { height: 27px; padding: 0; border-top: 1px solid var(--rule); font-size: 0.93rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mini td + td { padding-left: 10px; }
-.scenario { margin-top: 22px; padding: 12px 14px 14px; border: 1px dashed var(--ink-3); border-radius: 2px; }
-.scenario h3 { margin: 0 0 2px; }
+.mini td:first-child { width: 92px; }
+.mini td:last-child { width: 84px; }
+.mini .blank td { color: var(--ink-2); }
 .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .btns button {
   background: var(--plate); border: 1px solid var(--ink); border-radius: 2px; padding: 6px 11px; font-size: 0.93rem; font-weight: 550;
@@ -255,11 +340,12 @@ table { border-collapse: collapse; width: 100%; }
 }
 .btns button:hover { background: var(--ink); color: var(--plate); }
 .btns button:active { transform: translateY(1px); }
+.btns button:disabled { opacity: 0.45; cursor: not-allowed; background: var(--plate); color: inherit; transform: none; }
 .link { background: none; border: 0; padding: 0; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; text-align: left; }
 .link:hover { text-decoration-thickness: 2px; }
 
 /* --- страницы «Прогноз» и «Руководителю» ------------------------------- */
-.page { padding: 14px 20px 32px; display: grid; gap: 14px; max-width: 1500px; margin: 0 auto; }
+.page { padding: 14px 20px 32px; display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: 14px; width: 100%; max-width: 1500px; margin: 0 auto; }
 .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; align-items: start; }
 .page h2 { margin-bottom: 4px; }
 .page p + p { margin-top: 8px; }
@@ -347,7 +433,8 @@ tr.high .meter i, tr.elevated .meter i { background: var(--ai); }
 .lg-corner { width: 11px; height: 11px; border-left: 3px solid var(--warn-ink); border-top: 3px solid var(--warn-ink); display: inline-block; }
 .lg-dot.ok { background: var(--ok); } .lg-dot.idle { background: var(--idle); } .lg-dot.bad { background: var(--bad); } .lg-dot.ai { background: var(--ai); }
 .hud-side { position: absolute; z-index: 1; right: 14px; top: 14px; bottom: 14px; width: 372px; display: flex; flex-direction: column; pointer-events: none; }
-.hud-side .side { position: static; max-height: 100%; pointer-events: auto; box-shadow: 0 1px 0 #fff inset, 0 6px 16px -8px oklch(0.3 0.03 155 / 0.5); }
+.hud-side .side { max-height: 100%; pointer-events: auto; box-shadow: 0 1px 0 #fff inset, 0 6px 16px -8px oklch(0.3 0.03 155 / 0.5); }
+.hud-side .side-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 
 .tag3d {
   display: flex; align-items: baseline; gap: 6px; white-space: nowrap; padding: 2px 7px 3px;
@@ -371,11 +458,80 @@ tr.high .meter i, tr.elevated .meter i { background: var(--ai); }
   color: var(--ink-2); white-space: nowrap; transform: translateY(-100%);
 }
 
+/* --- оболочка в высоту окна --------------------------------------------- */
+/* Окно шире 1180 px: страница не прокручивается, шапка и полоса источника стоят на месте,
+   экран занимает остаток высоты. Прокручиваются только список в боковой панели и .page. */
+@media (min-width: 1181px) and (min-height: 600px) {
+  .app { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
+  .page {
+    flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    max-width: none; margin: 0; padding-left: max(20px, calc(50% - 730px)); padding-right: max(20px, calc(50% - 730px));
+  }
+  .twin { min-height: 0; }
+  .hud-side .side { height: 100%; }
+
+  .board { flex: 1 1 0; min-height: 0; padding: 10px 20px; gap: 10px; grid-template-rows: auto minmax(0, 1fr); }
+  .board-main { grid-template-columns: minmax(0, 1fr) 372px; grid-template-rows: minmax(0, 1fr); align-items: stretch; min-height: 0; }
+  .side { min-height: 0; overflow: hidden; }
+  /* прокручивается только список внутри панели; колесо на его краю страницу не трогает */
+  .side-body {
+    flex: 1 1 0; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+    scrollbar-gutter: stable; scrollbar-width: thin; scrollbar-color: var(--rule) transparent;
+  }
+  /* графики паспорта делят свободную высоту вкладки, но не сжимаются меньше читаемого */
+  .pane .chart.fit, .pane > .dep { flex: 1 1 0; min-height: 46px; max-height: 200px; }
+  .pane > .dep { display: flex; flex-direction: column; }
+  .pane > .dep > .chart.fit { flex: 1 1 0; min-height: 0; max-height: none; }
+  .pane.dep .chart.fit { min-height: 58px; }
+
+  /* мнемосхема вписывается в свою область целиком: по ширине и по высоте */
+  .stage { min-height: 0; container-type: size; }
+  .mimic-scroll { flex: 1 1 0; min-height: 0; position: relative; }
+  .mimic { position: absolute; inset: 0; height: 100%; }
+  .under { height: 140px; }
+  .under .chart.fit { flex: 1 1 0; height: auto; }
+}
+/* на высоком окне схеме хватает места, остаток отдаётся графику выпуска (0,4313 — пропорция холста схемы) */
+@media (min-width: 1181px) and (min-height: 860px) {
+  .under { height: clamp(140px, calc(100cqh - 100cqw * 0.4313), 190px); }
+}
+@media (min-width: 1181px) and (min-height: 600px) and (max-height: 699px) {
+  .under { height: 116px; }
+  .bn-note p { -webkit-line-clamp: 3; }
+}
+/* низкое окно: паспорт плотнее, строка последнего инцидента — в одну строку */
+@media (min-width: 1181px) and (min-height: 600px) and (max-height: 759px) {
+  .board { padding: 8px 20px; gap: 8px; }
+  .side-head { padding: 7px 16px; }
+  .pass-top { padding-top: 7px; }
+  .pane { gap: 6px; padding: 8px 0; }
+  .side-last.inc button { display: flex; align-items: baseline; gap: 8px; padding: 6px 0 7px 22px; }
+  .side-last .inc-head { display: contents; }
+  .side-last .inc-type { display: none; }
+  .side-last strong { flex: 1 1 auto; order: 1; }
+  .side-last time { order: 2; }
+}
+/* паспорт и лента рядом */
+@media (min-width: 1680px) and (min-height: 600px) {
+  .board-main.has-sel { grid-template-columns: minmax(0, 1fr) 372px 340px; }
+  .board-main.has-sel .side-last { display: none; }
+}
+@media (max-width: 1679px), (max-height: 599px) {
+  .board-main.has-sel > .feed { display: none; }
+}
+@media (max-width: 1679px) {
+  .w-full { display: none; }
+  .w-short { display: inline; }
+}
+@media (min-width: 1181px) and (max-width: 1279px) {
+  .inst { padding-left: 12px; padding-right: 12px; }
+}
+
 /* --- адаптация --------------------------------------------------------- */
 @media (max-width: 1180px) {
-  .board-main { grid-template-columns: minmax(0, 1fr); }
-  .side { position: static; max-height: none; }
   .instruments { grid-template-columns: repeat(2, 1fr); }
+  .w-full { display: inline; }
+  .w-short { display: none; }
   .inst.wide { grid-column: 1 / -1; }
   .inst { border-top: 1px solid var(--rule); }
   .inst.wide { border-top: 0; }
@@ -386,6 +542,8 @@ tr.high .meter i, tr.elevated .meter i { background: var(--ai); }
   .twin { display: flex; flex-direction: column; min-height: 0; }
   .twin-stage { position: relative; inset: auto; height: 68vh; min-height: 420px; }
   .hud-side { position: static; width: auto; padding: 12px; pointer-events: auto; }
+  .hud-side .side { max-height: none; }
+  .hud-side .side-body { overflow-y: visible; }
   .hud-kpi { right: 14px; flex-wrap: wrap; }
   .hud-kpi div { flex: 1 1 30%; border-left: 0; padding: 6px 12px; }
   .hud-kpi p { font-size: 1.4rem; }
@@ -397,9 +555,15 @@ tr.high .meter i, tr.elevated .meter i { background: var(--ai); }
   .top { gap: 12px; padding: 10px 14px; }
   .status { margin-left: 0; width: 100%; justify-content: space-between; gap: 12px; }
   .board, .page { padding-left: 12px; padding-right: 12px; }
-  .synthetic { padding: 6px 14px; }
+  .synthetic { padding: 0 14px; }
   .under { grid-template-columns: minmax(0, 1fr); }
   .big { font-size: 2.2rem; }
+  .w-full { display: none; }
+  .w-short { display: inline; }
+  .sub { height: auto; min-height: 20px; white-space: normal; }
+  /* телефон: схема не сжимается меньше 980 px и прокручивается по горизонтали */
+  .mimic-scroll { overflow-x: auto; }
+  .mimic { min-width: 980px; }
   .bars li { grid-template-columns: 1fr 72px 40px; }
   .bars-track { grid-column: 1 / -1; order: 4; }
   h1 { font-size: 1.4rem; }

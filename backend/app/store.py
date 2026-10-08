@@ -39,6 +39,7 @@ class Store:
         self.events: list[dict] = []          # простои
         self._open: dict[str, dict] = {}
         self.buf: list[list[int]] = []        # уровни накопителей по тактам
+        self.work: list[int] = []             # номера рабочих тактов (не ночь, не выходной, не плановое ТО)
         self.models: dict = {}                # дата -> {модель: выпуск}
 
     def __len__(self):
@@ -48,6 +49,8 @@ class Store:
         t = len(self.ts)
         self.ts.append(ts)
         self.buf.append(buf)
+        if rows[0][1] not in ("off", "planned"):
+            self.work.append(t)
         hour = ts.replace(minute=0, second=0, microsecond=0)
         agg = self.hourly.get(hour)
         if agg is None:
@@ -108,6 +111,21 @@ class Store:
     def fails_72h(self, sid: str, t: int) -> int:
         f = self.series[sid].fail_idx
         return bisect_right(f, t) - bisect_right(f, t - 864)
+
+    def is_work(self, t: int) -> bool:
+        k = bisect_right(self.work, t)
+        return k > 0 and self.work[k - 1] == t
+
+    def work_bins(self, size: int, count: int) -> list[list[int]]:
+        """Последние count корзин по size рабочих тактов для графиков.
+
+        Корзины нарезаны по сквозному счёту рабочих тактов, а не от текущего
+        момента, поэтому заполненная корзина больше не меняется: на графике
+        дописывается только правая точка. Последняя корзина может быть неполной.
+        """
+        w = self.work
+        last = (len(w) - 1) // size
+        return [w[b * size:(b + 1) * size] for b in range(max(0, last - count + 1), last + 1)]
 
     def open_event(self, sid: str):
         return self._open.get(sid)

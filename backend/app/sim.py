@@ -14,11 +14,12 @@ from . import layout as L
 
 TICK_S = 300
 TICKS_PER_HOUR = 12
+GRACE = 24   # рабочих тактов без случайной остановки после сценария «Ускорить износ»
 
 
 class _St:
     __slots__ = ("spec", "h", "down_left", "cause", "acc", "wear", "q_left",
-                 "b_vib", "b_temp", "b_cur", "defect_base")
+                 "b_vib", "b_temp", "b_cur", "defect_base", "grace", "manual_hold")
 
     def __init__(self, spec, rng):
         self.spec = spec
@@ -28,6 +29,8 @@ class _St:
         self.acc = 0.0
         self.wear = 3.0 / (spec["wear_days"] * 288)
         self.q_left = 0
+        self.grace = 0
+        self.manual_hold = False
         self.b_vib = rng.uniform(1.6, 2.6)
         self.b_temp = rng.uniform(48, 62)
         self.b_cur = rng.uniform(14, 24)
@@ -55,18 +58,26 @@ class Simulator:
         return next(s for s in self.st if s.spec["id"] == sid)
 
     def degrade(self, sid, h=0.3):
-        self._find(sid).h = h
+        # только ухудшаем: сильно изношенный пост сценарий не должен «подлечить»
+        s = self._find(sid)
+        s.h = min(s.h, h)
+        # отсрочка: изношенный узел сначала должен «прозвучать» в телеметрии, иначе пост
+        # может встать на первых тактах и прогноз не успеет предупредить
+        s.grace = GRACE
 
-    def fail(self, sid, minutes=60):
+    def fail(self, sid, minutes=60, cause=None, manual=False):
         s = self._find(sid)
         s.down_left = max(1, minutes // 5)
-        s.cause = self._pick_cause(s)
+        s.cause = cause or self._pick_cause(s)
+        s.manual_hold = manual
 
     def repair(self, sid):
         s = self._find(sid)
         s.down_left = 0
         s.cause = None
+        s.manual_hold = False
         s.h = 0.97
+        s.grace = 0
 
     # -------------------------------------------------------------------
     def _pick_cause(self, s):
@@ -98,12 +109,16 @@ class Simulator:
 
         # отказы и восстановление
         for s in self.st:
-            if s.down_left > 0:
+            if s.manual_hold:
+                pass  # ручной наряд держит пост остановленным до проверочного пуска
+            elif s.down_left > 0:
                 s.down_left -= 1
                 if s.down_left == 0:
                     if s.cause in L.EQUIP_CAUSES:
                         s.h = rng.uniform(0.85, 1.0)
                     s.cause = None
+            elif working and s.grace > 0:
+                s.grace -= 1
             elif working:
                 hazard = 0.00003 + 0.5 * (1 - s.h) ** 7
                 if rng.random() < hazard:

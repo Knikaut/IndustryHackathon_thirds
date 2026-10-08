@@ -68,7 +68,7 @@ export interface Executive {
   model: {
     roc_auc: number; precision: number; recall: number; event_recall: number; lead_h: number | null;
     test_failures: number; caught_failures: number; failures_total: number; train_rows: number;
-    horizon_h: number; threshold: number; algorithm: string; features: string[];
+    horizon_h: number; horizon_unit?: string; threshold: number; algorithm: string; features: string[];
   };
 }
 
@@ -89,25 +89,69 @@ async function get<T>(url: string): Promise<T> {
   return r.json();
 }
 
-export const post = (url: string) => fetch(url, { method: "POST" });
+// растёт после каждой команды двойнику: следующий ответ опроса принимается, даже если такт тот же
+let commands = 0;
+export const post = (url: string) => fetch(url, { method: "POST" }).finally(() => { commands++; });
 
-/** Опрос API с интервалом. Старые данные остаются на экране, пока грузятся новые. */
-export function usePoll<T>(url: string | null, ms: number) {
-  const [data, setData] = useState<T | null>(null);
+// последние ответы по адресу: повторный вход на экран сразу показывает прежние данные
+const cache = new Map<string, unknown>();
+
+export interface PollOptions<T> {
+  /** Если вернёт true, ответ считается тем же снимком: состояние не меняется и экран не перерисовывается. */
+  same?: (prev: T, next: T) => boolean;
+  /** Перезапросить при смене значения (например, такта модели) вместо собственного таймера. */
+  tick?: unknown;
+}
+
+/**
+ * Опрос API с интервалом. Старые данные остаются на экране, пока грузятся новые.
+ * При ms = 0 запрос разовый, но после ошибки повторяется, пока сервер не ответит.
+ */
+export function usePoll<T>(url: string | null, ms: number, opts: PollOptions<T> = {}) {
+  const [data, setData] = useState<T | null>(() => (url ? (cache.get(url) as T | undefined) ?? null : null));
   const [error, setError] = useState<string | null>(null);
-  const seq = useRef(0);
+  const same = useRef(opts.same);
+  same.current = opts.same;
+  const kick = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (!url) return;
-    const mine = ++seq.current;
-    let timer: number;
-    const load = () =>
+    let alive = true, busy = false, again = false, fails = 0, timer = 0;
+    // данные и номер команды, при которых принят последний ответ по этому адресу
+    let shown = cache.get(url) as T | undefined, stamp = -1;
+    if (shown !== undefined) setData(shown);
+    const load = () => {
+      const sent = commands;
+      busy = true;
       get<T>(url)
-        .then((d) => { if (mine === seq.current) { setData(d); setError(null); } })
-        .catch((e) => { if (mine === seq.current) setError(String(e.message ?? e)); })
-        .finally(() => { if (mine === seq.current && ms > 0) timer = window.setTimeout(load, ms); });
+        .then((d) => {
+          if (!alive) return;
+          fails = 0;
+          cache.set(url, d);
+          setError(null);
+          if (shown !== undefined && sent === stamp && same.current?.(shown, d)) return;
+          shown = d; stamp = sent;
+          setData(d);
+        })
+        .catch((e) => { if (alive) { fails++; setError(String(e.message ?? e)); } })
+        .finally(() => {
+          if (!alive) return;
+          busy = false;
+          if (again) { again = false; load(); }
+          else if (ms > 0) timer = window.setTimeout(load, ms);
+          else if (fails) timer = window.setTimeout(load, Math.min(10000, 2000 * fails));
+        });
+    };
+    // запрос по такту: если предыдущий ещё в пути, новый уйдёт сразу после него, а не поверх
+    kick.current = () => { if (busy) again = true; else { clearTimeout(timer); load(); } };
     load();
-    return () => { seq.current++; clearTimeout(timer); };
+    return () => { alive = false; kick.current = null; clearTimeout(timer); };
   }, [url, ms]);
+  const tick = useRef(opts.tick);
+  useEffect(() => {
+    if (Object.is(tick.current, opts.tick)) return;
+    tick.current = opts.tick;
+    kick.current?.();
+  }, [opts.tick]);
   return { data, error };
 }
 

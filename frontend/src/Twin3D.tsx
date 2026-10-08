@@ -1,5 +1,5 @@
 import { Html, OrbitControls } from "@react-three/drei";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, RootState, useFrame, useThree } from "@react-three/fiber";
 import { MutableRefObject, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { dur, int, Layout, pct, Snapshot, StateName, StationLive, StationSpec } from "./api";
@@ -371,6 +371,8 @@ function Scene({ layout, snap, selected, onSelect, roof, home }: Props & { roof:
   }, [layout]);
 
   const live = Object.fromEntries(snap.stations.map((s) => [s.id, s]));
+  // тон накопителя — по открытому инциденту: сервер поднимает его с запасом и у порога он не мигает
+  const alarmed = new Set(snap.incidents.filter((i) => i.open && i.type === "buffer").map((i) => i.station));
   const states = useRef<StateName[]>([]);
   states.current = layout.stations.map((s) => live[s.id].state);
 
@@ -403,10 +405,9 @@ function Scene({ layout, snap, selected, onSelect, roof, home }: Props & { roof:
       ))}
       {snap.buffers.map((b) => {
         const spec = layout.buffers.find((x) => x.id === b.id);
-        const fill = b.level / b.cap;
         return spec ? (
           <Rack key={b.id} pos={world.to(spec)} level={b.level} cap={b.cap} name={b.name}
-            warn={fill >= 0.9 || fill <= 0.1} painted={world.shopOf[spec.after] === "PAINT"} zoom={zoom} />
+            warn={alarmed.has(b.id)} painted={world.shopOf[spec.after] === "PAINT"} zoom={zoom} />
         ) : null;
       })}
 
@@ -419,9 +420,15 @@ function Scene({ layout, snap, selected, onSelect, roof, home }: Props & { roof:
 
 interface Props { layout: Layout; snap: Snapshot; selected: string | null; onSelect: (id: string | null) => void }
 
-export default function Twin3D(props: Props) {
+/** active = false: экран спрятан (открыт другой раздел), сцена остаётся в памяти, но кадры не рисуются. */
+export default function Twin3D({ active = true, onReady, ...props }: Props & { active?: boolean; onReady?: () => void }) {
   const { snap, selected, onSelect } = props;
   const k = snap.kpi;
+  // как на «Щите»: в первые полчаса смены доли считаются по одной-двум машинам
+  const early = k.sched_hours < 0.5;
+  const three = useRef<RootState | null>(null);
+  // спрятанный холст имеет нулевой размер и новых свойств не получает: цикл кадров останавливаем напрямую
+  useEffect(() => { three.current?.setFrameloop(active ? "always" : "never"); }, [active]);
   const down = snap.stations.filter((s) => s.state === "down").length;
   const atRisk = snap.stations.filter((s) => s.risk_level === "high" && s.state !== "down").length;
   // сцена открывается видом со спутника; через мгновение крыша снимается и открывает линию
@@ -429,18 +436,19 @@ export default function Twin3D(props: Props) {
   const [home, setHome] = useState(0);
   useEffect(() => { const t = window.setTimeout(() => setRoof(false), 1900); return () => clearTimeout(t); }, []);
   return (
-    <main className="twin">
+    <main className="twin" style={active ? undefined : { display: "none" }}>
       <div className="twin-stage">
-        <Canvas shadows dpr={[1, 2]} camera={{ fov: 30, near: 1, far: 1200, position: [36, 170, 190] }}
+        <Canvas shadows="percentage" dpr={[1, 2]} camera={{ fov: 30, near: 1, far: 1200, position: [36, 170, 190] }}
+          frameloop={active ? "always" : "never"} onCreated={(state) => { three.current = state; onReady?.(); }}
           onPointerMissed={() => onSelect(null)} aria-label="Трёхмерная модель завода">
           <Scene {...props} roof={roof} home={home} />
         </Canvas>
 
         <section className="hud hud-kpi" aria-label="Показатели смены">
           <div><h2>Выпуск смены</h2><p className="num">{int(k.fact)}<small> из {int(k.plan)}</small></p></div>
-          <div><h2>OEE</h2><p className="num">{pct(k.oee)}<small> %</small></p></div>
+          <div><h2>OEE</h2><p className="num">{early ? "—" : pct(k.oee, 0)}<small>{early ? "" : " %"}</small></p></div>
           <div><h2>Простои</h2><p className={`num ${down ? "bad" : ""}`}>{int(k.downtime_min)}<small> мин</small></p></div>
-          <div><h2>Качество</h2><p className="num">{pct(k.quality)}<small> %</small></p></div>
+          <div><h2>Качество</h2><p className="num">{early ? "—" : pct(k.quality, 0)}<small>{early ? "" : " %"}</small></p></div>
           <div><h2>Стоит постов</h2><p className={`num ${down ? "bad" : ""}`}>{down}</p></div>
           <div><h2>Под риском</h2><p className={`num ${atRisk ? "ai" : ""}`}>{atRisk}</p></div>
         </section>
@@ -452,15 +460,16 @@ export default function Twin3D(props: Props) {
 
         <p className="hud hud-hint">
           <span><i className="lg-dot ok" />работает</span><span><i className="lg-dot idle" />ждёт</span>
-          <span><i className="lg-dot bad" />простой</span><span><i className="lg-dot planned" />плановое ТО</span>
+          <span><i className="lg-dot bad" />простой</span>
           <span><i className="lg-ring" />прогноз ИИ: риск отказа</span><span><i className="lg-corner" />узкое место</span>
           <span className="sep">Тяните, чтобы повернуть · колесо приближает · клик по посту открывает паспорт</span>
         </p>
       </div>
 
       <div className="hud-side">
-        {selected
-          ? <Passport key={selected} id={selected} snap={snap} onClose={() => onSelect(null)} />
+        {/* у спрятанной сцены панели нет: иначе её паспорт опрашивал бы сервер вместе с паспортом «Щита» */}
+        {!active ? null : selected
+          ? <Passport id={selected} layout={props.layout} snap={snap} onClose={() => onSelect(null)} />
           : <Feed snap={snap} onSelect={onSelect} />}
       </div>
     </main>

@@ -35,6 +35,14 @@ def month_outlook(store: Store, now: datetime) -> dict:
     day_hours = L.SHIFT_HOURS * len(L.SHIFTS)
     total = sum(day_hours for d in range((nxt - first).days) if (first + timedelta(days=d)).weekday() < 5)
     rate = fact / worked if worked else 0.0
+    if worked < 2 * L.SHIFT_HOURS:
+        # в первые две смены месяца темп по паре машин ничего не говорит: берём темп последних 30 дней
+        f30 = w30 = 0
+        for h in store.hours_between(now - timedelta(days=30), now):
+            last = store.hourly[h][LAST]
+            f30 += last[UNITS]
+            w30 += (last[TICKS] - last[PLANNED]) / 12
+        rate = f30 / w30 if w30 else rate
     by_model = {}
     for day, counts in store.models.items():
         if first.date() <= day <= now.date():
@@ -84,11 +92,13 @@ def period_kpi(store: Store, hours) -> dict:
         )
 
     a_line = 1 - _ratio(down_sum, sched_sum)
-    oee = _ratio(fact * fpy, ideal)
+    # темп ограничен единицей: из задела пост может выдать за такт больше идеала,
+    # а OEE собирается из составляющих, чтобы их произведение всегда с ним сходилось
+    p_line = min(1.0, _ratio(fact, ideal * a_line))
     return dict(
         plan=round(plan), fact=fact, ideal=round(ideal),
-        oee=oee, availability=a_line, quality=fpy,
-        performance=min(1.0, _ratio(oee, a_line * fpy)),
+        oee=a_line * p_line * fpy, availability=a_line, quality=fpy,
+        performance=p_line,
         load=_ratio(run_sum, sched_sum),
         downtime_min=down_sum * 5, defects=sum(r[DEFECTS] for r in tot),
         sched_hours=sched_line / 12, stations=stations,

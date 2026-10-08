@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Двойник завода</title>
+<link rel="stylesheet" href="fonts.css">
+<style>
+  @page { size: 1920px 1080px; margin: 0; }
+  :root {
+    --ink: #1b2130;
+    --ink-2: #596172;
+    --line: #d4d8dd;
+    --slot: #f2f4f2;
+    --slot-line: #a9b0b7;
+    --ai: oklch(0.47 0.2 305);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: 'Golos Text Variable', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 29px; line-height: 1.42; color: var(--ink); background: #fff;
+    hyphens: none; font-kerning: normal;
+  }
+  .slide {
+    width: 1920px; height: 1080px; padding: 124px 120px 96px;
+    position: relative; overflow: hidden; break-after: page; background: #fff;
+    display: flex; flex-direction: column;
+  }
+  .slide:last-child { break-after: auto; }
+  h1 { font-size: 58px; line-height: 1.14; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; max-width: 1560px; }
+  p { text-wrap: pretty; }
+  .num { font-family: 'Sofia Sans Condensed Variable', sans-serif; font-weight: 600; }
+  .soft { color: var(--ink-2); }
+
+  /* титул и финал */
+  .center { justify-content: center; padding-top: 96px; }
+  .hero { font-size: 156px; line-height: 1; letter-spacing: -0.03em; font-weight: 600; max-width: none; }
+  .lead { font-size: 42px; line-height: 1.28; max-width: 1280px; margin-top: 44px; }
+  .meta { margin-top: 84px; font-size: 31px; line-height: 1.5; color: var(--ink-2); }
+  .meta b { color: var(--ink); font-weight: 600; }
+  .meta a { color: inherit; text-decoration: none; }
+  .three { margin-top: 56px; font-size: 44px; line-height: 1.36; }
+
+  /* текст и место для скриншота */
+  .split { display: grid; grid-template-columns: 500px 1120px; gap: 60px; margin-top: 54px; align-items: start; }
+  .points p + p, .steps li + li { margin-top: 27px; padding-top: 27px; border-top: 1px solid var(--line); }
+  .steps { list-style: none; counter-reset: step; }
+  .steps li { counter-increment: step; display: grid; grid-template-columns: 46px 1fr; text-wrap: pretty; }
+  .steps li::before { content: counter(step); font-family: 'Sofia Sans Condensed Variable', sans-serif; font-weight: 600; font-size: 40px; line-height: 1; color: var(--ink-2); padding-top: 2px; }
+  .shot { width: 1120px; height: 630px; position: relative; display: flex; align-items: flex-start; justify-content: flex-start; }
+  .shot img { display: block; max-width: 100%; max-height: 100%; border: 1px solid var(--line); border-radius: 4px; }
+  .shot .ph {
+    position: absolute; inset: 0; border: 2px dashed var(--slot-line); border-radius: 6px; background: var(--slot);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    padding: 0 150px; gap: 14px; color: var(--ink-2);
+  }
+  .shot .ph b { font-size: 34px; font-weight: 600; }
+  .shot:has(img) .ph { display: none; }
+
+  /* три колонки под заголовком */
+  .cols3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px; margin-top: 76px; }
+  .cols3 p { border-top: 2px solid var(--ink); padding-top: 30px; font-size: 32px; line-height: 1.4; }
+  .after { margin-top: auto; font-size: 34px; line-height: 1.36; max-width: 1480px; }
+
+  /* таблица */
+  table { border-collapse: collapse; width: 100%; margin-top: 54px; }
+  th { text-align: left; font-weight: 400; color: var(--ink-2); padding: 0 40px 18px 0; border-bottom: 2px solid var(--ink); }
+  td { vertical-align: top; padding: 23px 40px 23px 0; border-bottom: 1px solid var(--line); }
+  td:first-child { font-weight: 600; }
+  tr:last-child td { border-bottom: 0; }
+  .req td:first-child, .req th:first-child { width: 640px; }
+
+  /* путь автомобиля */
+  .flow { list-style: none; display: grid; grid-template-columns: repeat(7, 1fr); position: relative; margin-top: 96px; }
+  .flow::before { content: ""; position: absolute; top: 12px; left: 15px; right: calc(100% / 7 - 15px); height: 6px; background: var(--ink); }
+  .flow li { position: relative; padding: 68px 30px 0 0; font-size: 26px; line-height: 1.38; color: var(--ink-2); }
+  .flow li::before { content: ""; position: absolute; top: 0; left: 0; width: 30px; height: 30px; border-radius: 50%; background: #fff; border: 6px solid var(--ink); }
+  .flow b { display: block; font-size: 31px; line-height: 1.2; font-weight: 600; color: var(--ink); margin-bottom: 14px; }
+
+  /* крупные числа */
+  .figs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 60px; margin-top: 60px; }
+  .figs .num { display: block; font-size: 136px; line-height: 1; color: var(--ai); }
+  .figs span { display: block; margin-top: 14px; font-size: 31px; line-height: 1.34; max-width: 440px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; margin-top: 62px; }
+  .two p { border-top: 1px solid var(--line); padding-top: 26px; }
+  .two p + p { margin-top: 0; }
+
+  /* данные организаторов */
+  .org { display: grid; grid-template-columns: 1000px 620px; gap: 60px; margin-top: 54px; }
+  .org table { margin-top: 0; font-size: 27px; }
+  .org td { padding: 19px 36px 19px 0; }
+  .org td:first-child { width: 470px; }
+  .found h2, .pair h2 { font-size: 29px; font-weight: 400; color: var(--ink-2); padding-bottom: 18px; border-bottom: 2px solid var(--ink); }
+  .found div { padding: 20px 0 22px; border-bottom: 1px solid var(--line); }
+  .found div:last-child { border-bottom: 0; }
+  .found .num { display: block; font-size: 70px; line-height: 1.05; }
+  .found span { display: block; margin-top: 4px; font-size: 27px; line-height: 1.36; }
+
+  /* расчёт эффекта */
+  .split.wide { grid-template-columns: 580px 1040px; }
+  .wide .shot { width: 1040px; height: 585px; }
+  .calc { list-style: none; font-size: 28px; }
+  .calc li { display: grid; grid-template-columns: 36px 128px 1fr; align-items: baseline; padding: 12px 0; border-bottom: 1px solid var(--line); line-height: 1.3; white-space: nowrap; }
+  .calc li:last-child { border-bottom: 2px solid var(--ink); }
+  .calc .num { font-size: 42px; line-height: 1; }
+  .calc i { font-style: normal; color: var(--ink-2); }
+  .result { margin-top: 26px; display: flex; align-items: baseline; gap: 20px; font-size: 31px; line-height: 1.3; }
+  .result .num { font-size: 124px; line-height: 0.9; color: var(--ai); }
+  .caveat { margin-top: 30px; font-size: 26px; line-height: 1.4; color: var(--ink-2); }
+
+  /* архитектура */
+  .arch { display: grid; grid-template-columns: 1fr 56px 1fr 56px 1fr 56px 1fr 56px 1fr; margin-top: 62px; align-items: stretch; }
+  .arch div { border: 2px solid var(--ink); border-radius: 4px; padding: 26px 24px 28px; font-size: 26px; line-height: 1.38; color: var(--ink-2); }
+  .arch b { display: block; font-size: 32px; line-height: 1.2; font-weight: 600; color: var(--ink); margin-bottom: 14px; }
+  .arch svg { align-self: center; justify-self: center; width: 40px; height: 22px; }
+  .arch path { fill: none; stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+  .note { margin-top: 56px; font-size: 34px; line-height: 1.36; max-width: 1480px; }
+  .stack { margin-top: auto; font-size: 31px; color: var(--ink-2); }
+
+  /* ограничения и шаги */
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; margin-top: 54px; }
+  .pair p { padding: 26px 0; border-bottom: 1px solid var(--line); font-size: 32px; line-height: 1.4; }
+  .pair p:last-child { border-bottom: 0; }
+</style>
+<script>
+  // Скриншот лежит в screens/ как .png или .jpg; пока файла нет, на его месте остаётся рамка.
+  function miss(img) {
+    if (!img.dataset.retry) { img.dataset.retry = "1"; img.src = img.src.replace(/\.png$/, ".jpg"); }
+    else img.remove();
+  }
+</script>
+</head>
+<body>
+
+<section class="slide center">
+  <h1 class="hero">Двойник завода</h1>
+  <p class="lead">Цифровой двойник автомобильного завода: видит всю линию, предупреждает об&nbsp;отказе заранее, считает потери и&nbsp;эффект</p>
+  <div class="meta">
+    <p>Кейс №&nbsp;2 · АО «Группа компаний АЛЛЮР»</p>
+    <p>Qostanai AI Industry Hackathon 2026</p>
+    <p><b>Команда Ceres</b></p>
+  </div>
+</section>
+
+<section class="slide">
+  <h1>Завод работает как одна цепочка, а&nbsp;видят его по&nbsp;частям</h1>
+  <div class="cols3">
+    <p>Шесть участков зависят друг от&nbsp;друга: комплекты, сварка, окраска, сборка, контроль, отгрузка.</p>
+    <p>Когда один пост встаёт, следующие остаются без кузовов, а&nbsp;предыдущим некуда их отдавать.</p>
+    <p>Состояние всех участков трудно отслеживать в&nbsp;реальном времени. Решения запаздывают, риски не&nbsp;прогнозируются.</p>
+  </div>
+  <p class="after">Задача кейса: двойник, который показывает процессы и&nbsp;ключевые показатели в&nbsp;режиме, близком к&nbsp;реальному времени.</p>
+</section>
+
+<section class="slide">
+  <h1>Пять требований кейса закрыты четырьмя экранами</h1>
+  <table class="req">
+    <tr><th>Требование кейса</th><th>Где в&nbsp;прототипе</th></tr>
+    <tr><td>Визуализация участков и&nbsp;оборудования</td><td>«Щит»: мнемосхема из&nbsp;19&nbsp;постов. «Завод 3D»: площадка и&nbsp;оборудование в&nbsp;объёме</td></tr>
+    <tr><td>Мониторинг ключевых показателей</td><td>Выпуск к&nbsp;плану, OEE, загрузка, простои и&nbsp;качество за&nbsp;смену</td></tr>
+    <tr><td>Инциденты и&nbsp;отклонения</td><td>Лента инцидентов и&nbsp;паспорт поста с&nbsp;телеметрией</td></tr>
+    <tr><td>Панель для руководителей</td><td>«Руководителю»: итоги, потери, план месяца, расчёт эффекта</td></tr>
+    <tr><td>Прогноз простоев и&nbsp;узких мест с&nbsp;ИИ</td><td>«Прогноз»: риск отказа каждого поста на&nbsp;8&nbsp;часов, узкое место, накопители</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h1>Линия двойника повторяет путь автомобиля на&nbsp;заводе в&nbsp;Костанае</h1>
+  <ol class="flow">
+    <li><b>Комплекты</b>мелкоузловая схема CKD, детали приходят комплектами</li>
+    <li><b>Сварка</b>около 90&nbsp;деталей, от&nbsp;2000 до&nbsp;3000 сварных точек</li>
+    <li><b>Замер</b>лазерный замер геометрии более чем в&nbsp;1000 точек</li>
+    <li><b>Окраска</b>13&nbsp;ванн, катафорезный грунт, роботы и&nbsp;маляры</li>
+    <li><b>Контроль покрытия</b>система на&nbsp;основе ИИ ищет дефекты</li>
+    <li><b>Сборка</b>конвейер из&nbsp;59&nbsp;рабочих постов</li>
+    <li><b>Испытания</b>водяная камера, полигон</li>
+  </ol>
+  <p class="after">Последовательность взята из&nbsp;открытых источников о&nbsp;заводе. В&nbsp;двойнике она сведена к&nbsp;19&nbsp;постам в&nbsp;шести цехах, времена цикла и&nbsp;показатели условные.</p>
+</section>
+
+<section class="slide">
+  <h1>Щит: вся линия на&nbsp;одном экране</h1>
+  <div class="split">
+    <div class="points">
+      <p>19&nbsp;постов в&nbsp;шести цехах и&nbsp;два накопителя кузовов. Лампа поста показывает состояние, рамка отмечает узкое место.</p>
+      <p>Сверху показатели смены: выпуск к&nbsp;плану, OEE, загрузка, простои, качество.</p>
+      <p>Справа лента инцидентов и&nbsp;отклонений. Клик по&nbsp;посту открывает паспорт с&nbsp;телеметрией.</p>
+    </div>
+    <figure class="shot">
+      <img src="screens/shield.png" alt="" onerror="miss(this)">
+      <figcaption class="ph"><b>Место для скриншота</b><span>Экран «Щит» целиком: мнемосхема, показатели смены, лента инцидентов</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide">
+  <h1>Завод 3D: та&nbsp;же линия в&nbsp;объёме</h1>
+  <div class="split">
+    <div class="points">
+      <p>Площадка построена по&nbsp;спутниковому снимку: главный корпус, контейнерная площадка, стоянки готовых машин.</p>
+      <p>У&nbsp;каждого поста своё оборудование: сварочные роботы, ванны катафореза, окрасочные камеры, конвейер.</p>
+      <p>Перед остановившимся постом кузова встают в&nbsp;очередь. Клик по&nbsp;посту подводит к&nbsp;нему камеру.</p>
+    </div>
+    <figure class="shot">
+      <img src="screens/twin3d.png" alt="" onerror="miss(this)">
+      <figcaption class="ph"><b>Место для скриншота</b><span>Экран «Завод 3D»: корпус со&nbsp;снятой крышей, посты и&nbsp;кузова на&nbsp;линии</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide">
+  <h1>Прогноз: предупреждение раньше отказа</h1>
+  <div class="split">
+    <div class="points">
+      <p>Риск отказа каждого поста на&nbsp;ближайшие 8&nbsp;часов работы линии.</p>
+      <p>У&nbsp;каждого предупреждения есть объяснение: какие сигналы выросли и&nbsp;что сделать бригаде.</p>
+      <p>Рядом текущее узкое место и&nbsp;прогноз заполнения накопителей.</p>
+    </div>
+    <figure class="shot">
+      <img src="screens/forecast.png" alt="" onerror="miss(this)">
+      <figcaption class="ph"><b>Место для скриншота</b><span>Экран «Прогноз»: посты по&nbsp;убыванию риска, сигналы и&nbsp;рекомендуемое действие</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide">
+  <h1>Модель учится на&nbsp;телеметрии и&nbsp;проверяется на&nbsp;отложенных данных</h1>
+  <div class="figs">
+    <div><b class="num">0,92</b><span>ROC-AUC на&nbsp;последней четверти истории</span></div>
+    <div><b class="num">12 из 21</b><span>отказов предсказаны заранее</span></div>
+    <div><b class="num">7,5 ч</b><span>медианное упреждение в&nbsp;часах работы линии</span></div>
+  </div>
+  <div class="two">
+    <p>Градиентный бустинг (scikit-learn). Признаки: отклонение вибрации, температуры, тока привода и&nbsp;времени цикла от&nbsp;нормы поста, их&nbsp;рост за&nbsp;6 и&nbsp;24&nbsp;часа, наработка после ремонта, отказы за&nbsp;72&nbsp;часа. Рост сигналов не&nbsp;может снижать риск.</p>
+    <p>Телеметрия синтетическая, цифры описывают модель двойника, а&nbsp;не&nbsp;реальный завод. От&nbsp;запуска к&nbsp;запуску ROC-AUC 0,85–0,92. В&nbsp;сценарии с&nbsp;ускоренным износом предупреждение пришло раньше отказа в&nbsp;413&nbsp;прогонах из&nbsp;424.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h1>Сценарий показа: от&nbsp;износа до&nbsp;ремонта</h1>
+  <div class="split">
+    <ol class="steps">
+      <li>«Ускорить износ» в&nbsp;паспорте поста: вибрация и&nbsp;температура узла растут.</li>
+      <li>Через 6–20&nbsp;секунд ИИ предупреждает об&nbsp;отказе в&nbsp;ленте инцидентов.</li>
+      <li>«Отказ на&nbsp;90&nbsp;мин»: пост встаёт, соседние ждут, идёт счёт простоя.</li>
+      <li>Предупреждение закрыто с&nbsp;пометкой «Прогноз подтвердился». Ремонт возвращает пост в&nbsp;работу.</li>
+    </ol>
+    <figure class="shot">
+      <img src="screens/passport.png" alt="" onerror="miss(this)">
+      <figcaption class="ph"><b>Место для скриншота</b><span>Паспорт поста: телеметрия, кнопки сценария и&nbsp;предупреждение ИИ в&nbsp;ленте</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide">
+  <h1>Практикум: диспетчер сам разбирает отказ</h1>
+  <div class="split">
+    <div class="points">
+      <p>Четыре учебных отказа: датчик робота, фильтр окрасочной камеры, цепь конвейера, камера контроля.</p>
+      <p>Диспетчер по&nbsp;симптомам выбирает причину и&nbsp;действие для бригады. Ошибка добавляет минуты простоя.</p>
+      <p>Бригада присылает отчёт, диспетчер принимает работу или возвращает её. Оборудованием двойник не&nbsp;управляет.</p>
+    </div>
+    <figure class="shot">
+      <img src="screens/lab.png" alt="" onerror="miss(this)">
+      <figcaption class="ph"><b>Место для скриншота</b><span>Страница практикума: выбор причины и&nbsp;действия, журнал наряда</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide">
+  <h1>Руководителю: итоги, потери, план месяца</h1>
+  <div class="split">
+    <div class="points">
+      <p>Итоги за&nbsp;7, 30 или 75&nbsp;дней: план и&nbsp;факт по&nbsp;дням, OEE и&nbsp;его составляющие.</p>
+      <p>Потери: причины простоев по&nbsp;убыванию, показатели цехов, посты с&nbsp;наибольшими потерями, наработка на&nbsp;отказ.</p>
+      <p>План месяца: выпуск по&nbsp;моделям и&nbsp;прогноз на&nbsp;конец месяца.</p>
+    </div>
+    <figure class="shot">
+      <img src="screens/exec.png" alt="" onerror="miss(this)">
+      <figcaption class="ph"><b>Место для скриншота</b><span>Экран «Руководителю», вкладка «Итоги» или «Потери»</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide">
+  <h1>Двойник настроен на&nbsp;тестовые данные организаторов</h1>
+  <div class="org">
+    <table>
+      <tr><th>В&nbsp;файле</th><th>В&nbsp;двойнике</th></tr>
+      <tr><td>План 120 за&nbsp;смену, две смены по&nbsp;8&nbsp;часов</td><td>Темп 15&nbsp;автомобилей в&nbsp;час, времена цикла постов</td></tr>
+      <tr><td>Простои: оборудование, причина, минуты</td><td>Названия оборудования и&nbsp;причин, ремонт около 30&nbsp;минут</td></tr>
+      <tr><td>Брак по&nbsp;участкам</td><td>Уровень брака в&nbsp;сварке, окраске и&nbsp;сборке</td></tr>
+      <tr><td>Нормативы OEE, брака и&nbsp;простоев</td><td>Цели на&nbsp;приборах, пороги инцидентов</td></tr>
+      <tr><td>План по&nbsp;моделям</td><td>Доли моделей в&nbsp;выпуске, план месяца</td></tr>
+    </table>
+    <div class="found">
+      <h2>Что показала сверка с&nbsp;нормативами</h2>
+      <div><b class="num">3,5 и 5,2 %</b><span>брак окраски за&nbsp;оба дня при норме 2&nbsp;%</span></div>
+      <div><b class="num">4 800</b><span>план по&nbsp;моделям в&nbsp;сумме при минимуме 5&nbsp;500 в&nbsp;месяц</span></div>
+      <div><b class="num">5 280</b><span>даёт сменный план за&nbsp;22&nbsp;рабочих дня: нужны перевыполнение или дополнительные смены</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h1>Эффект: плановое ТО вместо аварийного простоя</h1>
+  <div class="split wide">
+    <div>
+      <ul class="calc">
+        <li><i></i><b class="num">16,4 ч</b><span>аварийных простоев в&nbsp;месяц</span></li>
+        <li><i>×</i><b class="num">55 %</b><span>отказов пойманы заранее</span></li>
+        <li><i>×</i><b class="num">60 %</b><span>плановое ТО короче ремонта</span></li>
+        <li><i>×</i><b class="num">35 %</b><span>простоя доходит до&nbsp;выпуска</span></li>
+        <li><i>×</i><b class="num">15,9</b><span>авто в&nbsp;час, темп линии</span></li>
+      </ul>
+      <div class="result"><b class="num">30</b><span>автомобилей в&nbsp;месяц<br>дополнительно, оценка</span></div>
+      <p class="caveat">Допущения меняются ползунками. Часы простоев взяты из&nbsp;синтетической истории, а&nbsp;не&nbsp;из&nbsp;данных завода.</p>
+    </div>
+    <figure class="shot">
+      <img src="screens/effect.png" alt="" onerror="miss(this)">
+      <figcaption class="ph"><b>Место для скриншота</b><span>Экран «Руководителю», вкладка «Эффект»: ползунки допущений и&nbsp;результат</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="slide">
+  <h1>Архитектура: источник данных меняется без переделки интерфейса</h1>
+  <div class="arch">
+    <div><b>Источник</b>Сейчас симулятор линии с&nbsp;износом узлов. Дальше контроллеры через шлюз только на&nbsp;чтение.</div>
+    <svg viewBox="0 0 40 22"><path d="M2 11h34M27 3l9 8-9 8"/></svg>
+    <div><b>Хранилище</b>Наблюдения по&nbsp;тактам в&nbsp;5&nbsp;минут и&nbsp;почасовые агрегаты. Один вход для любых данных.</div>
+    <svg viewBox="0 0 40 22"><path d="M2 11h34M27 3l9 8-9 8"/></svg>
+    <div><b>Аналитика</b>Показатели смены и&nbsp;периода, инциденты, прогноз отказов, узкое место.</div>
+    <svg viewBox="0 0 40 22"><path d="M2 11h34M27 3l9 8-9 8"/></svg>
+    <div><b>API</b>Состояние линии, паспорт поста, панель руководителя, сценарии.</div>
+    <svg viewBox="0 0 40 22"><path d="M2 11h34M27 3l9 8-9 8"/></svg>
+    <div><b>Интерфейс</b>Щит, Завод 3D, Прогноз, Руководителю. Обновление раз в&nbsp;такт.</div>
+  </div>
+  <p class="note">Показатели, прогноз и&nbsp;API читают данные только из&nbsp;хранилища. Чтобы подключить реальную линию, меняется один модуль: источник.</p>
+  <p class="stack">Python · FastAPI · scikit-learn · React · TypeScript · three.js</p>
+</section>
+
+<section class="slide">
+  <h1>Что прототип пока не&nbsp;делает и&nbsp;что дальше</h1>
+  <div class="pair">
+    <div>
+      <h2>Ограничения</h2>
+      <p>Поток событий синтетический: в&nbsp;тестовых данных два дня по&nbsp;трём линиям и&nbsp;нет телеметрии.</p>
+      <p>Один пост равен одной единице оборудования.</p>
+      <p>История хранится в&nbsp;памяти, авторизации и&nbsp;ролей нет.</p>
+    </div>
+    <div>
+      <h2>Следующие шаги</h2>
+      <p>Подключить реальную линию через шлюз только на&nbsp;чтение: данные приходят в&nbsp;тот&nbsp;же вход, что и&nbsp;симулятор.</p>
+      <p>Переобучить прогноз на&nbsp;телеметрии завода или длинной истории простоев.</p>
+      <p>Добавить постоянное хранилище и&nbsp;роли: смена, служба ремонта, руководитель.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide center">
+  <h1 class="hero" style="font-size: 116px">Двойник завода</h1>
+  <div class="three">
+    <p>Видит всю линию.</p>
+    <p>Предупреждает об&nbsp;отказе заранее.</p>
+    <p>Считает потери и&nbsp;эффект.</p>
+  </div>
+  <div class="meta">
+    <p><b>Команда Ceres</b></p>
+    <p><a href="https://github.com/Knikaut/IndustryHackathon_thirds">github.com/Knikaut/IndustryHackathon_thirds</a></p>
+  </div>
+</section>
+
+</body>
+</html>

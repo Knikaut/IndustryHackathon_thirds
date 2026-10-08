@@ -1,0 +1,156 @@
+/* Экраны «Руководителю» и «Прогноз»: компоновка в один экран.
+   Файл подключается раньше styles.css, поэтому при равной специфичности побеждает styles.css:
+   все правила здесь идут от .pg-root и своих классов pg-, чужие селекторы не переопределяются. */
+/* ширина задана числом, а не содержимым: .page центрируется авто-отступами и без этого сжалась бы до ширины текста */
+.pg-root { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; align-content: start; min-width: 0; width: 1500px; max-width: 100%; }
+.pg-tab { display: grid; gap: 14px; min-width: 0; }
+.pg-root .panel.pg-pad { padding: 14px 18px 16px; }
+.pg-root .cols.pg-even { align-items: stretch; }
+.pg-root .pg-h3 { margin: 0 0 3px; }
+.pg-root .pg-h3.pg-gap { margin-top: 14px; }
+.pg-lead { color: var(--ink-2); margin-top: 4px; }
+.pg-lead.pg-first { margin-top: 0; }
+.pg-root .pg-small { font-size: 0.93rem; }
+.pg-root .table-scroll.pg-scroll { margin-top: 8px; }
+.pg-root .grid-table.pg-tight td { padding-top: 4px; padding-bottom: 4px; }
+/* место остаётся занятым: соседние элементы не сдвигаются, когда блок не нужен */
+.pg-off { visibility: hidden; }
+
+/* --- закреплённая строка: заголовок, вкладки, период -------------------- */
+.pg-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px 18px; align-items: center;
+  padding: 7px 16px; background: var(--plate); border: 1px solid var(--rule); border-radius: 3px;
+  box-shadow: 0 1px 0 #fff inset, 0 2px 5px -2px oklch(0.4 0.03 155 / 0.35);
+}
+/* когда прокручивается сама .page, строка встаёт ниже её верхнего отступа: заслонка закрывает щель над строкой */
+.pg-bar::before { content: ""; position: absolute; left: -1px; right: -1px; bottom: 100%; height: 24px; margin-bottom: 1px; background: var(--panel); }
+.pg-bar h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-tabs { display: flex; gap: 4px; min-width: 0; }
+.pg-tabs button {
+  white-space: nowrap; background: none; border: 1px solid var(--rule); border-radius: 2px;
+  padding: 5px 13px; font-weight: 550; color: var(--ink-2);
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.pg-tabs button:hover { border-color: var(--ink-3); color: var(--ink); }
+.pg-tabs button.on { background: var(--ink); border-color: var(--ink); color: var(--plate); }
+.pg-root .chips.pg-period { flex-wrap: nowrap; }
+.pg-root .chips.pg-period button { white-space: nowrap; }
+
+/* --- «Руководителю» ---------------------------------------------------- */
+.pg-root .facts.pg-strip { margin: 0; }
+.pg-root .facts.pg-flush { margin: 0; }
+/* высоту графика задаёт контейнер: на высоких окнах графики занимают свободное место */
+.pg-chart { display: flex; flex-direction: column; height: 190px; margin-top: 6px; }
+.pg-root .pg-chart > .chart { flex: 1 1 auto; min-height: 0; height: 100%; }
+.pg-h2row { display: flex; flex-wrap: wrap; gap: 0 14px; justify-content: space-between; align-items: baseline; }
+.pg-h2row span { font-size: 0.88rem; color: var(--ink-2); }
+.pg-root .pg-bars .bars { gap: 6px; margin-top: 10px; }
+.pg-root .checks.pg-checks { gap: 7px; margin: 6px 0 0; }
+.pg-root .notes.pg-notes { max-width: none; margin-top: 4px; }
+.pg-root .notes.pg-notes li + li { margin-top: 3px; }
+.pg-root .notes.pg-notes .link { font-weight: 550; }
+.pg-root .callout.pg-callout { margin: 12px 0 0; }
+.pg-root .cols.pg-org { gap: 14px 32px; margin-top: 12px; }
+.pg-root .pg-under { margin-top: 6px; }
+.pg-root .effect-grid.pg-eg { margin: 12px 0 12px; align-items: start; }
+.pg-root .knobs.pg-knobs { gap: 12px; }
+.pg-root .knobs.pg-knobs label { gap: 3px; }
+.pg-root .pg-range { margin-top: 14px; color: var(--ink-2); }
+.pg-range b { color: var(--ink); font-size: 1.15rem; font-weight: 650; }
+.pg-root .pg-reset { margin-top: 10px; }
+.pg-reset .link { font-weight: 550; color: var(--ink-2); }
+
+/* --- «Прогноз»: таблица риска с постоянной геометрией ------------------- */
+.pg-head { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 24px; align-items: center; }
+.pg-head h1 { white-space: nowrap; }
+.pg-head .pg-lead { margin-top: 0; font-size: 0.93rem; line-height: 1.35; }
+.pg-root .grid-table.pg-fc { table-layout: fixed; min-width: 940px; }
+.pg-c-post { width: 21%; }
+.pg-c-risk { width: 104px; }
+.pg-c-spark { width: 200px; }
+.pg-c-why { width: 31%; }
+.pg-root .pg-fc th { padding: 0 10px 6px; overflow: hidden; text-overflow: ellipsis; }
+.pg-root .pg-fc td { padding: 5px 10px; vertical-align: middle; }
+.pg-fc tr.pg-high td { background: var(--ai-wash); }
+/* содержимое ячейки не может изменить высоту строки */
+.pg-cell { height: 42px; min-width: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+.pg-root .pg-cell .chart.fit { height: 42px; flex: none; }
+.pg-cell .link { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pg-cell .link:focus-visible { outline-offset: -2px; }
+.pg-one { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-risk b { font-size: 1.6rem; font-weight: 750; line-height: 1.1; color: var(--ink-2); }
+.pg-fc tr.pg-high .pg-risk b, .pg-fc tr.pg-elev .pg-risk b { color: var(--ai); }
+.pg-meter { display: block; height: 5px; margin-top: 3px; background: var(--tile); }
+.pg-meter i { display: block; height: 100%; width: 100%; background: var(--ink-3); transform-origin: left; transition: transform 0.8s var(--ease); }
+.pg-fc tr.pg-high .pg-meter i, .pg-fc tr.pg-elev .pg-meter i { background: var(--ai); }
+/* три слота под сигналы: подпись сверху, значение снизу */
+.pg-factors { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 12px; }
+.pg-factors li { display: grid; min-width: 0; }
+.pg-factors span { font-size: 0.86rem; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-factors b { font-size: 1.15rem; font-weight: 650; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-act { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 1.35; }
+
+/* --- «Прогноз»: накопители и доверие к модели --------------------------- */
+/* место под две строки держится всегда: появление узкого места не сдвигает графики */
+.pg-note { display: flex; align-items: center; min-height: calc(2.9em + 10px); padding: 5px 12px; margin-top: 4px; border-radius: 2px; background: var(--panel); color: var(--ink-2); }
+.pg-note.pg-on { background: oklch(0.93 0.05 80); color: var(--ink); }
+.pg-bufs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 22px; margin-top: 10px; }
+.pg-buf { min-width: 0; }
+.pg-buf b { font-size: 1.1rem; }
+.pg-root .pg-buf-eta { height: 2.8em; margin: 0 0 2px; line-height: 1.4; font-size: 0.93rem; color: var(--ink-2); }
+.pg-buf-eta span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-root .pg-buf .chart.fit { height: 100px; }
+.pg-root .facts.pg-strip dd { white-space: nowrap; }
+.pg-buf-eta b { color: var(--ink); }
+.pg-root .facts.pg-facts4 { grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: end; gap: 8px 14px; margin: 6px 0 10px; }
+.pg-root .pg-trust p + p { margin-top: 6px; }
+
+/* --- высота окна: графики итогов занимают свободное место, на низком окне строки плотнее --- */
+@media (min-width: 1181px) and (min-height: 740px) { .pg-chart { height: 300px; } }
+@media (min-width: 1181px) and (min-height: 860px) { .pg-chart { height: 430px; } }
+@media (min-width: 1181px) and (min-height: 1000px) { .pg-chart { height: 560px; } }
+@media (min-width: 1181px) and (max-height: 800px) {
+  .pg-root .panel.pg-pad { padding: 11px 18px 12px; }
+  .pg-root, .pg-tab { gap: 10px; }
+  .pg-root .grid-table.pg-tight td { padding-top: 1px; padding-bottom: 1px; }
+  .pg-root .pg-bars .bars { gap: 2px; }
+  /* «Прогноз» на низком окне: строки таблицы и графики накопителей ниже, пояснения плотнее */
+  .pg-root .pg-fc td { padding-top: 2px; padding-bottom: 2px; }
+  .pg-cell, .pg-root .pg-cell .chart.fit { height: 38px; }
+  .pg-act { line-height: 1.25; }
+  .pg-root .pg-buf .chart.fit { height: 64px; }
+  .pg-note { min-height: calc(1.45em + 10px); }
+  .pg-bufs { margin-top: 6px; }
+  .pg-root .facts.pg-facts4 { margin: 2px 0 6px; }
+  .pg-root .pg-trust p { line-height: 1.35; }
+  .pg-root .pg-trust p + p { margin-top: 4px; }
+  .pg-root .pg-trust .pg-small { font-size: 0.86rem; }
+}
+
+@media (min-width: 1181px) and (max-height: 740px) {
+  .pg-root .panel.pg-pad { padding: 8px 18px 8px; }
+  .pg-root, .pg-tab { gap: 6px; }
+  .pg-cell, .pg-root .pg-cell .chart.fit { height: 34px; }
+  .pg-risk b { font-size: 1.4rem; }
+  .pg-act { line-height: 1.2; }
+  .pg-root .pg-buf .chart.fit { height: 58px; }
+}
+
+/* --- адаптация --------------------------------------------------------- */
+@media (max-width: 1180px) {
+  .pg-bar { grid-template-columns: minmax(0, 1fr) auto; }
+  .pg-bar h1 { grid-column: 1; grid-row: 1; }
+  .pg-bar .chips { grid-column: 2; grid-row: 1; }
+  .pg-tabs { grid-column: 1 / -1; grid-row: 2; flex-wrap: wrap; }
+  .pg-head { grid-template-columns: minmax(0, 1fr); }
+  .pg-head h1 { white-space: normal; }
+}
+@media (max-width: 640px) {
+  .pg-bar { position: static; padding: 8px 12px; }
+  .pg-bar h1 { white-space: normal; }
+  .pg-tabs button { padding: 5px 9px; }
+  .pg-bufs { grid-template-columns: minmax(0, 1fr); }
+  .pg-root .facts.pg-facts4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pg-root .panel.pg-pad { padding: 12px 12px 14px; }
+}

@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { dur, int, Layout, Snapshot, STATE_LABEL } from "./api";
+import { memo, useMemo, useRef } from "react";
+import { dur, int, Layout, Snapshot, StateName, StationLive, STATE_LABEL } from "./api";
 
 type P = [number, number];
 
@@ -48,35 +48,86 @@ export function geometry(pts: P[]) {
   return { total: cum[cum.length - 1], distOf, slice, at };
 }
 
+interface NodeProps {
+  id: string; name: string; x: number; y: number; state: StateName; cause: string | null; downMin: number;
+  unitsH: number; riskPct: number; level: StationLive["risk_level"]; selected: boolean; bottleneck: boolean;
+  onSelect: (id: string | null) => void;
+}
+
+// пост перерисовывается, только когда меняется что-то из показанного им самим
+const StationNode = memo(function StationNode({
+  id, name, x, y, state, cause, downMin, unitsH, riskPct, level, selected, bottleneck, onSelect,
+}: NodeProps) {
+  const risky = level !== "low" && state !== "down";
+  return (
+    <g transform={`translate(${x},${y})`}
+      className={`st ${state} ${selected ? "sel" : ""}`}
+      role="button" tabIndex={0} aria-pressed={selected}
+      aria-label={`${name}: ${STATE_LABEL[state]}, риск отказа ${riskPct} %`}
+      onClick={() => onSelect(selected ? null : id)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(id); } }}>
+      <rect x="-70" y="-58" width="140" height="140" className="hit" />
+      {bottleneck && <path d="M-40,-40h80v80h-80z" className="bn-mark" />}
+      <circle r="27" className="bezel" />
+      {/* кольцо и строка риска не снимаются, а гаснут: место под них занято всегда */}
+      <circle r="35" className={`risk-ring ${level} ${risky ? "" : "off"}`} />
+      <circle r="21" className="lamp" />
+      <text y="6" textAnchor="middle" className="st-id">{id}</text>
+      <text y="-46" textAnchor="middle" className="st-name">{name.toUpperCase()}</text>
+      {state === "down" ? (
+        <text y="58" textAnchor="middle" className="st-alarm">{cause} · {dur(downMin)}</text>
+      ) : state === "run" ? (
+        <text y="58" textAnchor="middle" className="st-val">
+          <tspan className="num">{int(unitsH)}</tspan><tspan className="unit"> шт/ч</tspan>
+        </text>
+      ) : (
+        <text y="58" textAnchor="middle" className="st-val"><tspan className="unit">{STATE_LABEL[state].toLowerCase()}</tspan></text>
+      )}
+      <text y="78" textAnchor="middle" className={`st-risk ${risky ? "" : "off"}`}>риск {riskPct} %</text>
+    </g>
+  );
+});
+
 export function Mimic({
   layout, snap, selected, onSelect,
 }: { layout: Layout; snap: Snapshot; selected: string | null; onSelect: (id: string | null) => void }) {
   const geo = useMemo(() => {
     const g = geometry(chamfer(layout.path as P[], 36));
     const d = layout.stations.map((s) => g.distOf([s.x, s.y]));
-    return { ...g, d };
+    // отрезки потока между постами: рисуются всегда, выключенные гаснут, чтобы точки шли в одной фазе
+    const segs = [...d.map((to, i) => g.slice(i === 0 ? 0 : d[i - 1], to)), g.slice(d[d.length - 1], g.total)];
+    const zones = layout.shops.map((shop) => {
+      const ss = layout.stations.filter((s) => s.shop === shop.id);
+      const xs = ss.map((s) => s.x);
+      return { shop, x0: Math.min(...xs) - 64, x1: Math.max(...xs) + 64, y: ss[0].y };
+    });
+    return { ...g, d, segs, zones };
   }, [layout]);
   const live = Object.fromEntries(snap.stations.map((s) => [s.id, s]));
   const bn = snap.bottleneck?.station;
-
-  const zones = layout.shops.map((shop) => {
-    const ss = layout.stations.filter((s) => s.shop === shop.id);
-    const xs = ss.map((s) => s.x);
-    return { shop, x0: Math.min(...xs) - 64, x1: Math.max(...xs) + 64, y: ss[0].y };
-  });
+  // тон накопителя — по открытому инциденту: сервер поднимает его с запасом и у порога он не мигает
+  const alarmed = new Set(snap.incidents.filter((i) => i.open && i.type === "buffer").map((i) => i.station));
+  // «шт/ч» скользит на ±1 почти каждый такт: показанное число меняем только при сдвиге на 2 и больше
+  const shown = useRef<Record<string, number>>({});
+  for (const s of snap.stations) {
+    const was = shown.current[s.id];
+    if (was == null || s.state !== "run" || Math.abs(s.units_h - was) >= 2) shown.current[s.id] = s.units_h;
+  }
+  const { w, h } = layout.canvas;
 
   return (
     <div className="mimic-scroll">
-      <svg className="mimic" viewBox={`0 0 ${layout.canvas.w} ${layout.canvas.h}`}
+      <svg className="mimic" viewBox={`0 0 ${w} ${h}`}
         role="group" aria-label="Мнемосхема завода">
         <defs>
           <pattern id="tiles" width="20" height="20" patternUnits="userSpaceOnUse">
             <path d="M20 0H0V20" fill="none" stroke="var(--tile)" strokeWidth="1" />
           </pattern>
         </defs>
-        <rect width="100%" height="100%" fill="url(#tiles)" onClick={() => onSelect(null)} />
+        {/* плитка шире холста: схема вписывается в область целиком, поля вокруг неё остаются щитом */}
+        <rect x={-w} y={-h} width={3 * w} height={3 * h} fill="url(#tiles)" onClick={() => onSelect(null)} />
 
-        {zones.map(({ shop, x0, x1, y }) => (
+        {geo.zones.map(({ shop, x0, x1, y }) => (
           <g key={shop.id} className="zone">
             <path d={`M${x0},${y - 80}v-8H${x1}v8`} />
             <text x={(x0 + x1) / 2} y={y - 100} textAnchor="middle">{x1 - x0 < 200 ? shop.name : shop.full}</text>
@@ -84,21 +135,20 @@ export function Mimic({
         ))}
 
         <path d={geo.slice(0, geo.total)} className="pipe" />
-        {layout.stations.map((s, i) => {
-          const from = i === 0 ? 0 : geo.d[i - 1];
-          const feeding = i === 0 ? live[s.id].state === "run" : live[layout.stations[i - 1].id].state === "run";
-          return feeding ? <path key={s.id} d={geo.slice(from, geo.d[i])} className="flow" /> : null;
+        {geo.segs.map((d, i) => {
+          const feeder = layout.stations[i === 0 ? 0 : i - 1].id;
+          return <path key={i} d={d} className={live[feeder]?.state === "run" ? "flow" : "flow off"} />;
         })}
-        {live[layout.stations[layout.stations.length - 1].id].state === "run" && (
-          <path d={geo.slice(geo.d[geo.d.length - 1], geo.total)} className="flow" />
-        )}
-        <text x={layout.path[0][0]} y={layout.path[0][1] - 16} className="terminal">ПОСТАВЩИКИ</text>
-        <text x={layout.canvas.w - 40} y={layout.path[layout.path.length - 1][1] - 16} textAnchor="end" className="terminal">ДИЛЕРАМ</text>
+        {/* подпись стоит вдоль торца линии: над линией её закрывала бы лампа первого поста */}
+        <text transform={`translate(${layout.path[0][0] - 12},${layout.path[0][1]}) rotate(-90)`} textAnchor="middle" className="terminal">ПОСТАВЩИКИ</text>
+        <text x={w - 40} y={layout.path[layout.path.length - 1][1] - 16} textAnchor="end" className="terminal">ДИЛЕРАМ</text>
 
         {snap.buffers.map((b) => {
-          const spec = layout.buffers.find((x) => x.id === b.id)!;
+          const spec = layout.buffers.find((x) => x.id === b.id);
+          if (!spec) return null;
           const cells = 10, filled = Math.round((b.level / b.cap) * cells);
-          const tone = b.level / b.cap >= 0.9 || b.level / b.cap <= 0.1 ? "warn" : "";
+          const tone = alarmed.has(b.id) ? "warn" : "";
+          const eta = b.eta_min != null && b.eta_min < 480 && b.direction !== "stable";
           return (
             <g key={b.id} className={`tank ${tone}`} transform={`translate(${spec.x - 55},${spec.y - 17})`}>
               <rect width="110" height="34" className="tank-body" />
@@ -109,54 +159,32 @@ export function Mimic({
               <text x="55" y="58" textAnchor="middle" className="st-val">
                 <tspan className="num">{b.level}</tspan><tspan className="unit"> из {b.cap}</tspan>
               </text>
-              {b.eta_min != null && b.eta_min < 480 && (
-                <text x="55" y="78" textAnchor="middle" className="st-val">
-                  <tspan className="unit">{b.direction === "filling" ? "заполнится" : "опустеет"} через {dur(b.eta_min)}</tspan>
-                </text>
-              )}
+              <text x="55" y="78" textAnchor="middle" className="st-val">
+                <tspan className="unit">{!eta ? "уровень стабилен"
+                  : b.eta_min! < 1 ? (b.direction === "filling" ? "заполнен" : "пуст")
+                  : `${b.direction === "filling" ? "заполнится" : "опустеет"} через ${dur(b.eta_min!)}`}</tspan>
+              </text>
             </g>
           );
         })}
 
         {layout.stations.map((s) => {
           const l = live[s.id];
-          const risky = l.risk_level !== "low" && l.state !== "down";
-          return (
-            <g key={s.id} transform={`translate(${s.x},${s.y})`}
-              className={`st ${l.state} ${selected === s.id ? "sel" : ""}`}
-              role="button" tabIndex={0} aria-pressed={selected === s.id}
-              aria-label={`${s.name}: ${STATE_LABEL[l.state]}, риск отказа ${Math.round(l.risk * 100)} %`}
-              onClick={() => onSelect(selected === s.id ? null : s.id)}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(s.id); } }}>
-              <rect x="-70" y="-58" width="140" height="124" className="hit" />
-              {bn === s.id && <path d="M-40,-40h80v80h-80z" className="bn-mark" />}
-              <circle r="27" className="bezel" />
-              {risky && <circle r="35" className={`risk-ring ${l.risk_level}`} />}
-              <circle r="21" className="lamp" />
-              <text y="6" textAnchor="middle" className="st-id">{s.id}</text>
-              <text y="-46" textAnchor="middle" className="st-name">{s.name.toUpperCase()}</text>
-              {l.state === "down" ? (
-                <text y="58" textAnchor="middle" className="st-alarm">{l.cause} · {dur(l.down_min)}</text>
-              ) : l.state === "run" ? (
-                <text y="58" textAnchor="middle" className="st-val">
-                  <tspan className="num">{int(l.units_h)}</tspan><tspan className="unit"> шт/ч</tspan>
-                  {risky && <tspan className="ai"> · риск {Math.round(l.risk * 100)} %</tspan>}
-                </text>
-              ) : (
-                <text y="58" textAnchor="middle" className="st-val"><tspan className="unit">{STATE_LABEL[l.state].toLowerCase()}</tspan></text>
-              )}
-            </g>
-          );
+          return l ? (
+            <StationNode key={s.id} id={s.id} name={s.name} x={s.x} y={s.y} state={l.state} cause={l.cause}
+              downMin={l.down_min} unitsH={shown.current[s.id]} riskPct={Math.round(l.risk * 100)} level={l.risk_level}
+              selected={selected === s.id} bottleneck={bn === s.id} onSelect={onSelect} />
+          ) : null;
         })}
 
-        <g className="legend" transform={`translate(40,${layout.canvas.h - 26})`}>
-          {([["run", "работает"], ["idle", "ждёт подачи или затор"], ["down", "простой"], ["planned", "плановое ТО"]] as const).map(([k, t], i) => (
-            <g key={k} transform={`translate(${[0, 130, 380, 500][i]},0)`}>
+        <g className="legend" transform={`translate(40,${h - 26})`}>
+          {([["run", "работает"], ["idle", "ждёт подачи или затор"], ["down", "простой"]] as const).map(([k, t], i) => (
+            <g key={k} transform={`translate(${[0, 130, 380][i]},0)`}>
               <circle r="7" className={`lg ${k}`} /><text x="14" y="4.5">{t}</text>
             </g>
           ))}
-          <g transform="translate(680,0)"><circle r="8" className="risk-ring high still" /><text x="16" y="4.5">прогноз ИИ: риск отказа в ближайшие {snap.horizon_h} ч</text></g>
-          <g transform="translate(1160,0)"><path d="M-8,-8h16v16h-16z" className="bn-mark" /><text x="16" y="4.5">узкое место</text></g>
+          <g transform="translate(540,0)"><circle r="8" className="risk-ring high still" /><text x="16" y="4.5">прогноз ИИ: риск отказа в ближайшие {snap.horizon_h} ч работы</text></g>
+          <g transform="translate(1060,0)"><path d="M-8,-8h16v16h-16z" className="bn-mark" /><text x="16" y="4.5">узкое место</text></g>
         </g>
       </svg>
     </div>
